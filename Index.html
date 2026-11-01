@@ -1,0 +1,328 @@
+```html
+<!DOCTYPE html>
+<html lang="es" class="h-full dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoVault - Galería Pública & Gestión Privada</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                            950: '#0b132b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- ================= HEADER / NAVEGACIÓN ================= -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo e Indicador de Modo -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-brand-600 to-indigo-600 p-2 rounded-xl text-white shadow-md shadow-brand-500/20">
+                        <i data-lucide="image" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-extrabold bg-gradient-to-r from-white via-slate-200 to-brand-400 bg-clip-text text-transparent">PhotoVault</span>
+                        
+                        <!-- Insignia Dinámica de Estado -->
+                        <div id="statusBadge" class="flex items-center space-x-1.5 -mt-0.5">
+                            <!-- Inyectado con JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-center space-x-2">
+                    
+                    <!-- Botones Exclusivos de Modo Admin -->
+                    <div id="adminControls" class="hidden flex items-center space-x-2">
+                        <button onclick="openModal('uploadModal')" class="bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-md shadow-brand-600/20 flex items-center space-x-1.5">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Subir Foto</span>
+                        </button>
+
+                        <button onclick="openCategoryManager()" class="bg-slate-800 hover:bg-slate-700 text-brand-300 border border-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+                            <i data-lucide="folder-cog" class="w-4 h-4 text-brand-400"></i>
+                            <span class="hidden sm:inline">Gestionar Materias</span>
+                        </button>
+
+                        <button onclick="openModal('settingsModal')" title="Cambiar PIN" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition border border-slate-700">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                        </button>
+
+                        <button onclick="logoutAdmin()" title="Cerrar Sesión de Admin" class="px-3 py-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 rounded-xl transition border border-rose-500/20 flex items-center space-x-1.5">
+                            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                            <span class="hidden sm:inline">Salir</span>
+                        </button>
+                    </div>
+
+                    <!-- Botón Acceso Propietario (Modo Visitante) -->
+                    <button id="loginBtn" onclick="openModal('loginModal')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2">
+                        <i data-lucide="key-round" class="w-4 h-4 text-brand-400"></i>
+                        <span>Acceso Propietario</span>
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= ÁREA PRINCIPAL ================= -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Banner de Estado -->
+        <div class="bg-gradient-to-r from-slate-900 via-brand-950/40 to-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-start space-x-4">
+                <div class="p-3 bg-brand-600/20 text-brand-400 border border-brand-500/30 rounded-2xl shrink-0">
+                    <i data-lucide="globe" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <span>Galería Clasificada de Fotografías</span>
+                    </h2>
+                    <p id="bannerText" class="text-xs text-slate-400 mt-1 max-w-2xl">
+                        Estás explorando la galería pública en **Modo Lectura**. Puedes examinar, filtrar por materias y descargar imágenes. Para editar o subir nuevo material, inicia sesión como propietario.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Búsqueda y Filtros -->
+        <div class="bg-slate-900/80 rounded-3xl p-4 border border-slate-800 shadow-lg space-y-4">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                
+                <!-- Buscador -->
+                <div class="relative w-full sm:w-80">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Buscar por título, descripción o #tag..." class="w-full bg-slate-950 text-xs text-white placeholder-slate-500 pl-10 pr-4 py-2.5 rounded-2xl border border-slate-800 focus:border-brand-500 focus:outline-none transition">
+                </div>
+
+                <!-- Contador de Fotos -->
+                <div class="text-xs text-slate-400 font-mono">
+                    Mostrando <span id="visibleCount" class="text-white font-bold">0</span> imágenes
+                </div>
+
+            </div>
+
+            <!-- Chips de Categorías/Materias -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-1" id="categoryChips">
+                <!-- Inyectado dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Grilla de Imágenes -->
+        <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <!-- Tarjetas inyectadas dinámicamente -->
+        </div>
+
+        <!-- Estado Vacío -->
+        <div id="emptyState" class="hidden text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800">
+            <div class="w-12 h-12 bg-slate-800 text-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <i data-lucide="image-off" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">No se encontraron fotografías</h3>
+            <p class="text-xs text-slate-400 mt-1">Prueba seleccionando otra materia o realizando una búsqueda distinta.</p>
+        </div>
+
+    </main>
+
+    <!-- ================= MODAL 1: LOGIN DE PROPIETARIO ================= -->
+    <div id="loginModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button onclick="closeModal('loginModal')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-brand-600/20 text-brand-400 border border-brand-500/30 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-base font-bold text-white">Acceso Propietario</h3>
+                <p class="text-xs text-slate-400 mt-1">Ingresa el PIN de acceso exclusivo para activar opciones de gestión.</p>
+            </div>
+
+            <div id="loginAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-semibold bg-rose-500/10 border border-rose-500/30 text-rose-400 text-center"></div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">PIN de Acceso</label>
+                    <input type="password" id="pinInput" maxlength="12" placeholder="******" class="w-full text-center text-xl font-mono bg-slate-950 border border-slate-800 focus:border-brand-500 text-white rounded-2xl py-2.5 px-4 outline-none transition">
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs rounded-2xl shadow-lg shadow-brand-600/20 transition">
+                    Desbloquear Modo Administrador
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 2: GESTOR DE MATERIAS / CATEGORÍAS (SÓLO ADMIN) ================= -->
+    <div id="categoryModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="folder-cog" class="w-5 h-5 text-brand-400"></i>
+                    <h3 class="text-sm font-bold text-white">Administrador de Materias / Categorías</h3>
+                </div>
+                <button onclick="closeModal('categoryModal')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Formulario Agregar Nueva Materia -->
+            <form onsubmit="handleAddCategory(event)" class="mb-6 flex gap-2">
+                <input type="text" id="newCategoryInput" placeholder="Escribe el nombre de una nueva materia..." required class="flex-1 bg-slate-950 text-xs text-white border border-slate-800 rounded-xl px-3.5 py-2.5 focus:border-brand-500 outline-none">
+                <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center space-x-1">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Agregar</span>
+                </button>
+            </form>
+
+            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Materias Actuales (Haz clic en el lápiz para editar)</label>
+            <div id="categoryManagerList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <!-- Lista inyectada dinámicamente -->
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal('categoryModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 3: SUBIR FOTO (SÓLO ADMIN) ================= -->
+    <div id="uploadModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="upload" class="w-5 h-5 text-brand-400"></i>
+                    <h3 class="text-sm font-bold text-white">Publicar Nueva Fotografía</h3>
+                </div>
+                <button onclick="closeModal('uploadModal')" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="uploadForm" onsubmit="handleUpload(event)" class="space-y-4">
+                <!-- Drop Zone -->
+                <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-slate-700 hover:border-brand-500 bg-slate-950/50 hover:bg-brand-950/10 rounded-2xl p-6 text-center cursor-pointer transition">
+                    <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileSelected(event)">
+                    <div id="dropZoneContent">
+                        <i data-lucide="image-plus" class="w-8 h-8 mx-auto text-slate-400 mb-2"></i>
+                        <p class="text-xs font-semibold text-slate-300">Arrastra una imagen o haz clic para explorar</p>
+                        <p class="text-[10px] text-slate-500 mt-1">PNG, JPG, WebP o GIF (Guardado local)</p>
+                    </div>
+                    <img id="uploadPreview" class="hidden max-h-40 mx-auto rounded-xl object-contain mt-2" alt="Preview">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Título</label>
+                        <input type="text" id="photoTitle" required placeholder="Ej. Esquema Biológico" class="w-full bg-slate-950 text-xs text-white border border-slate-800 rounded-xl p-2.5 focus:border-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Materia / Categoría</label>
+                        <select id="photoCategorySelect" class="w-full bg-slate-950 text-xs text-white border border-slate-800 rounded-xl p-2.5 focus:border-brand-500 outline-none">
+                            <!-- Opciones inyectadas dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Etiquetas (separadas por coma)</label>
+                    <input type="text" id="photoTags" placeholder="clase, tema1, 2026" class="w-full bg-slate-950 text-xs text-white border border-slate-800 rounded-xl p-2.5 focus:border-brand-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Descripción corta</label>
+                    <textarea id="photoDesc" rows="2" placeholder="Detalles o notas sobre esta imagen..." class="w-full bg-slate-950 text-xs text-white border border-slate-800 rounded-xl p-2.5 focus:border-brand-500 outline-none resize-none"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('uploadModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-600/30">Publicar Imagen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 4: VISOR DE FOTO DETALLADO ================= -->
+    <div id="viewerModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[85vh]">
+            
+            <!-- Imagen -->
+            <div class="md:w-3/5 bg-slate-950 flex items-center justify-center p-4 relative">
+                <img id="viewerImg" class="max-h-[60vh] md:max-h-[80vh] w-auto object-contain rounded-xl" alt="Detalle">
+            </div>
+
+            <!-- Información -->
+            <div class="md:w-2/5 p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-slate-800">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span id="viewerCategory" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/30">Materia</span>
+                        <button onclick="closeModal('viewerModal')" class="text-slate-400 hover:text-white">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <h2 id="viewerTitle" class="text-base font-bold text-white">Título de la Foto</h2>
+                    <p id="viewerDate" class="text-[10px] font-mono text-slate-500 mt-1">Publicada el --/--/----</p>
+
+                    <p id="viewerDesc" class="text-xs text-slate-300 mt-4 leading-relaxed">Sin descripción.</p>
+
+                    <div class="mt-4">
+                        <span class="text-[10px] text-slate-400 font-bold block mb-1">Etiquetas:</span>
+                        <div id="viewerTags" class="flex flex-wrap gap-1"></div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
+                    <button id="viewerDeleteBtn" class="hidden px-3 py-2 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl text-xs font-bold transition border border-rose-500/20 flex items-center space-x-1.5">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Eliminar</span>
+                 
